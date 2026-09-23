@@ -1,0 +1,48 @@
+# Run everything on any machine/VM:  docker compose up --build
+# Use MongoDB instead:  DB_TYPE=mongo DATABASE_URL=mongodb://mongo:27017 docker compose --profile mongo up --build
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: closetshuffle
+      POSTGRES_PASSWORD: closetshuffle
+      POSTGRES_DB: closetshuffle
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U closetshuffle"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  mongo:
+    image: mongo:7
+    profiles: ["mongo"]
+    volumes:
+      - mongodata:/data/db
+
+  server:
+    build: ./server
+    ports:
+      - "4000:4000"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:5173}
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+      DB_TYPE: ${DB_TYPE:-postgres}
+      DATABASE_URL: ${DATABASE_URL:-postgres://closetshuffle:closetshuffle@db:5432/closetshuffle}
+      STORAGE_DRIVER: ${STORAGE_DRIVER:-local}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost:4000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@closetshuffle.test}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@12345}
+    volumes:
+      - uploads:/app/uploads
+
+volumes:
+  pgdata:
+  mongodata:
+  uploads:
