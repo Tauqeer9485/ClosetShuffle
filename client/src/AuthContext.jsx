@@ -29,6 +29,7 @@ export function AuthProvider({ children }) {
     login: (email, password) => authenticate('/api/auth/login', { email, password }),
     register: (fields) => authenticate('/api/auth/register', fields),
     logout: () => { setToken(null); setUser(null); },
+    updateUser: setUser,
   };
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
